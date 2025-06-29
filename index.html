@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flattery in Motion: Benchmarking and Analyzing Sycophancy in Video-LLMs</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: auto;
+            overflow: auto;
+            padding: 0 2rem;
+        }
+
+        header {
+            background: linear-gradient(to bottom, #002761, #8120c2); /* Gradient from deep blue to sky blue */
+            color: #fff;
+            padding: 2rem 0;
+            text-align: center;
+            /* The border-bottom is removed for a cleaner look with the gradient */
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        header p {
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .section {
+            background: #fff;
+            padding: 2rem;
+            margin-top: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            color: #0779e4;
+            border-bottom: 2px solid #f4f4f4;
+            padding-bottom: 0.5rem;
+        }
+
+        .authors {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .authors span {
+            display: inline-block;
+            margin: 0 10px;
+        }
+
+        .dataset-interactive {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .chart-container {
+            flex: 1;
+            max-width: 400px;
+        }
+        
+        .dataset-info {
+            flex: 1;
+        }
+
+        .download-button {
+            display: inline-block;
+            background: #0779e4;
+            color: #fff;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .download-button:hover {
+            background: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .highlight-max {
+            background-color: rgba(255, 0, 0, 0.2);
+            font-weight: bold;
+        }
+
+        .highlight-min {
+            background-color: rgba(0, 255, 0, 0.2);
+            font-weight: bold;
+        }
+
+        .authors-container {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .authors span {
+            display: inline-block;
+            margin: 0 10px;
+            font-size: 1.1rem; /* Adjust as needed */
+        }
+
+        .affiliations {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #cfcfcf; /* Lighter color for affiliations to distinguish from main text */
+        }
+
+        .affiliations p {
+            margin: 0.2rem 0;
+        }
+
+        .dataset-image-container {
+            text-align: center;
+            margin: 2rem 0; /* Adds space above and below the image */
+        }
+
+        .dataset-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px; /* Optional: adds rounded corners to the image */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Optional: adds a subtle shadow */
+        }
+        caption {
+            caption-side: bottom; /* Places caption below the table */
+            text-align: left;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .legend-color-box {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 1px solid #ddd;
+            vertical-align: middle;
+            margin-right: 2px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>
+            <img src="movie.png" alt="Movie Icon" style="width: 60px; height: 60px; vertical-align: middle; margin-right: -5px; position: relative; top: -10px;">
+            Flattery in Motion: Benchmarking and Analyzing Sycophancy in Video-LLMs
+            </h1>
+            <div class="authors-container">
+                <div class="authors">
+                    <span>Wenrui Zhou<sup>1,2</sup></span>
+                    <span>Shu Yang<sup>1,2</sup></span>
+                    <span>Qingsong Yang<sup>1,2,3</sup></span>
+                    <span>Zikun Guo<sup>1,2,4</sup></span>
+                    <span>Lijie Hu<sup>†,1,2</sup></span>
+                    <span>Di Wang<sup>†,1,2</sup></span>
+                </div>
+                <div class="affiliations">
+                    <p><sup>1</sup>Provable Responsible Al and Data Analytics (PRADA) Lab</p>
+                    <p><sup>2</sup>King Abdullah University of Science and Technology</p>
+                    <p><sup>3</sup>University of Science and Technology of China</p>
+                    <p><sup>4</sup>Kyungpook National University</p>
+                    <p><sup>†</sup>Corresponding Author</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="section">
+            <h2>Abstract</h2>
+            <p>As video large language models (Video-LLMs) become increasingly integrated into real-world applications that demand grounded multimodal reasoning, ensuring their factual consistency and reliability is of critical importance. However, sycophancy, the tendency of these models to align with user input even when it contradicts the visual evidence, undermines their trustworthiness in such contexts. Current sycophancy research has largely overlooked its specific manifestations in the video-language domain, resulting in a notable absence of systematic benchmarks and targeted evaluations to understand how Video-LLMs respond under misleading user input. To fill this gap, we propose <span style="font-family: 'Arial Black', Arial, sans-serif; font-weight: bold;">ViSE</span> (Video-LLM Sycophancy Benchmarking and Evaluation), the first dedicated benchmark designed to evaluate sycophantic behavior in state-of-the-art Video-LLMs across diverse question formats, prompt biases, and visual reasoning tasks. Specifically, <span style="font-family: 'Arial Black', Arial, sans-serif; font-weight: bold;">ViSE</span> pioneeringly brings linguistic perspectives on sycophancy into the visual domain, enabling fine-grained analysis across multiple sycophancy types and interaction patterns. In addition, we explore key-frame selection as an interpretable, training-free mitigation strategy, which reveals potential paths for reducing sycophantic bias by strengthening visual grounding.</p>
+            <div class="dataset-image-container">
+                <img src="./sycophancy.png" alt="VISE Dataset Overview" class="dataset-image">
+            </div>
+            <a href="https://www.arxiv.org/pdf/2506.07180" class="download-button">View Full Paper</a>
+        </div>
+
+        <div class="section">
+            <h2>Dataset Introduction: <span style="font-family: 'Arial Black', Arial, sans-serif; font-weight: bold;">ViSE</span></h2>
+            <p>To better investigate the emergence and dynamics of sycophancy in Video-LLMs, we build a dedicated benchmarking suite <span style="font-family: 'Arial Black', Arial, sans-serif; font-weight: bold;">ViSE</span>. It is designed to serve as a standardized testbed for systematically evaluating sycophantic behavior under diverse question types, prompt manipulations, and visual contexts.</p>
+            <div class="dataset-interactive">
+                <div class="dataset-info">
+                    <span style="font-family: 'Arial Black', Arial, sans-serif; font-weight: bold;">ViSE</span> is built on three established video understanding datasets: MSVD, MSRVTT, and NEXT-QA. This ensures a comprehensive evaluation of sycophancy from factual alignment to complex inference. Our dataset includes 367 carefully curated videos and 6,367 multiple-choice questions. The chart illustrates the composition of the <span style="font-family: 'Arial Black', Arial, sans-serif; font-weight: bold;">ViSE</span> benchmark across different categories.
+                </div>
+            </div>
+            <div class="dataset-image-container">
+                <img src="./dataset.png" alt="VISE Dataset Overview" class="dataset-image">
+            </div>
+             <ul>
+                <li>
+                    <strong>(a) Video Pool Curation:</strong> We prioritize samples exhibiting high Misleading Susceptibility Scores (MSS) and low Correction Receptiveness Scores (CRS), which are annotated with red dots. These samples reflect strong sycophantic tendencies with limited self-correction. 
+                </li>
+                <li>
+                    <strong>(b) Dataset Composition:</strong> <span style="font-family: 'Arial Black', Arial, sans-serif; font-weight: bold;">ViSE</span> is composed of videos with varying lengths and topics, along with a wide range of annotated questions. These questions come in temporal, descriptive, and reasoning-based formats to thoroughly assess sycophantic behavior in different visual and linguistic situations.
+                </li>
+            </ul>
+            <a href="https://pan.baidu.com/s/1TpIrAIDjFWdj1CaoO1xVGg?pwd=gfjw" class="download-button">Download <span style="font-family: 'Arial Black', Arial, sans-serif; font-weight: bold;">ViSE</span> Dataset</a>
+            <a href="https://pan.baidu.com/s/1pHnugOoIe1qkJjHL_CgucA?pwd=gpv3" class="download-button">Download QA Pairs</a>
+        </div>
+
+        <div class="section">
+            <h2>Benchmarking Results</h2>
+            <p>We evaluated 5 state-of-the-art Video-LLMs across 8 model variants. The table below shows the Misleading Susceptibility Score (MSS) across different models and sycophancy types. A lower MSS indicates greater resilience to sycophantic behavior. Red and green cells represent the highest and lowest scores, respectively.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="2">Model</th>
+                        <th>Strong Bias</th>
+                        <th>Medium Bias</th>
+                        <th>Suggestive Bias</th>
+                        <th>Are You Sure?</th>
+                        <th>Explicitly Reject &#10003;</th>
+                        <th>Explicitly Endorse &#10007;</th>
+                        <th>Mimicry</th>
+                        <th>Max</th>
+                        <th>Average</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="3">Qwen2.5-VL <sup>&clubs;</sup></td>
+                        <td>7B</td>
+                        <td>57.66</td>
+                        <td class="highlight-max">38.16</td>
+                        <td>43.41</td>
+                        <td class="highlight-max">45.32</td>
+                        <td class="highlight-max">60.54</td>
+                        <td>30.55</td>
+                        <td>38.79</td>
+                        <td>60.54</td>
+                        <td class="highlight-max">44.92</td>
+                    </tr>
+                    <tr>
+                        <td>32B</td>
+                        <td>28.34</td>
+                        <td>16.23</td>
+                        <td>17.81</td>
+                        <td>13.34</td>
+                        <td>17.53</td>
+                        <td class="highlight-min">4.77</td>
+                        <td>34.56</td>
+                        <td>34.56</td>
+                        <td>18.94</td>
+                    </tr>
+                    <tr>
+                        <td>72B</td>
+                        <td>26.85</td>
+                        <td>11.87</td>
+                        <td>21.90</td>
+                        <td>17.25</td>
+                        <td>10.29</td>
+                        <td>8.39</td>
+                        <td class="highlight-min">10.29</td>
+                        <td>26.85</td>
+                        <td>15.26</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="2">InternVL 2.5 <sup>&clubs;</sup></td>
+                        <td>8B</td>
+                        <td>33.83</td>
+                        <td>26.45</td>
+                        <td>22.46</td>
+                        <td>16.69</td>
+                        <td>40.45</td>
+                        <td>41.44</td>
+                        <td>30.41</td>
+                        <td>41.44</td>
+                        <td>30.25</td>
+                    </tr>
+                    <tr>
+                        <td>26B</td>
+                        <td>25.75</td>
+                        <td>21.48</td>
+                        <td>16.01</td>
+                        <td>13.66</td>
+                        <td>25.66</td>
+                        <td>19.51</td>
+                        <td>25.07</td>
+                        <td class="highlight-min">25.75</td>
+                        <td>21.02</td>
+                    </tr>
+                     <tr>
+                        <td>VideoChat-Flash <sup>&clubs;</sup></td>
+                        <td></td>
+                        <td class="highlight-min">7.55</td>
+                        <td class="highlight-min">5.09</td>
+                        <td class="highlight-min">4.16</td>
+                        <td class="highlight-min">2.67</td>
+                        <td>13.36</td>
+                        <td class="highlight-max">52.68</td>
+                        <td>24.39</td>
+                        <td class="highlight-max">52.68</td>
+                        <td>15.70</td>
+                    </tr>
+                     <tr>
+                        <td colspan="2">GPT 4o mini <sup>&hearts;</sup></td>
+                        <td>8.72</td>
+                        <td>7.72</td>
+                        <td>9.53</td>
+                        <td>6.76</td>
+                        <td class="highlight-min">11.76</td>
+                        <td>6.69</td>
+                        <td class="highlight-max">45.96</td>
+                        <td>45.96</td>
+                        <td class="highlight-min">13.88</td>
+                    </tr>
+                     <tr>
+                        <td colspan="2">Gemini-1.5-Pro <sup>&hearts;</sup></td>
+                        <td class="highlight-max">58.04</td>
+                        <td>33.96</td>
+                        <td class="highlight-max">47.94</td>
+                        <td>42.05</td>
+                        <td>41.83</td>
+                        <td>19.59</td>
+                        <td>22.39</td>
+                        <td>58.04</td>
+                        <td>37.97</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><b>Model Average</b></td>
+                        <td><b>30.84</b></td>
+                        <td>20.12</td>
+                        <td>22.90</td>
+                        <td><u>19.72</u></td>
+                        <td>27.68</td>
+                        <td>22.95</td>
+                        <td>28.98</td>
+                        <td>36.72</td>
+                        <td>24.74</td>
+                    </tr>
+                </tbody>
+            <caption>
+                <b>Table 1:</b> MSS across different models and sycophancy types. <sup>&clubs;</sup> represents Open-source models, <sup>&hearts;</sup> represents Commercial models. 
+                <span class="legend-color-box" style="background-color: rgba(255, 0, 0, 0.2);"></span> Red and 
+                <span class="legend-color-box" style="background-color: rgba(0, 255, 0, 0.2);"></span> Green highlights represent the highest and lowest scores, respectively.
+            </caption>
+            </table>
+
+            <p>The complexity and type of question asked significantly affect a model's susceptibility to sycophancy. This table shows the average Misleading Susceptibility Score (MSS) for different types of questions across all tested models.</p>
+            <table>
+                <caption><b>Table 2: </b>Average MSS Across Complex Questions and Sycophancy Scenarios for All Models.</caption>
+                <thead>
+                    <tr>
+                        <th>Question Type</th>
+                        <th>Strong<br>Bias</th>
+                        <th>Medium<br>Bias</th>
+                        <th>Suggestive<br>Bias</th>
+                        <th>Are You<br>Sure?</th>
+                        <th>Explicitly<br>Reject &#10003;</th>
+                        <th>Explicitly<br>Endorse &#10007;</th>
+                        <th>Mimicry</th>
+                        <th>Syco Types<br>Avg</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Causal How (CH)</td>
+                        <td>24.56</td>
+                        <td>15.70</td>
+                        <td>16.93</td>
+                        <td>14.83</td>
+                        <td>24.64</td>
+                        <td>15.82</td>
+                        <td>24.42</td>
+                        <td>19.56</td>
+                    </tr>
+                    <tr>
+                        <td>Causal Why (CW)</td>
+                        <td>23.98</td>
+                        <td>13.70</td>
+                        <td>16.02</td>
+                        <td>14.43</td>
+                        <td>22.98</td>
+                        <td>14.41</td>
+                        <td>25.93</td>
+                        <td>18.78</td>
+                    </tr>
+                    <tr>
+                        <td>Descriptive Counting (DC)</td>
+                        <td>19.15</td>
+                        <td>13.64</td>
+                        <td>12.50</td>
+                        <td>14.49</td>
+                        <td>18.18</td>
+                        <td>16.19</td>
+                        <td class="highlight-min">9.66</td>
+                        <td>14.83</td>
+                    </tr>
+                    <tr>
+                        <td>Descriptive Location (DL)</td>
+                        <td class="highlight-min">14.26</td>
+                        <td class="highlight-min">6.75</td>
+                        <td class="highlight-min">7.54</td>
+                        <td class="highlight-min">5.16</td>
+                        <td class="highlight-min">11.51</td>
+                        <td class="highlight-min">8.73</td>
+                        <td>12.90</td>
+                        <td class="highlight-min">9.55</td>
+                    </tr>
+                    <tr>
+                        <td>Descriptive Others (DO)</td>
+                        <td>17.17</td>
+                        <td>9.34</td>
+                        <td>10.84</td>
+                        <td>10.09</td>
+                        <td>17.02</td>
+                        <td>11.75</td>
+                        <td>18.07</td>
+                        <td>13.47</td>
+                    </tr>
+                    <tr>
+                        <td>Temporal Current (TC)</td>
+                        <td>24.38</td>
+                        <td>12.87</td>
+                        <td>15.79</td>
+                        <td>13.70</td>
+                        <td>23.20</td>
+                        <td>17.54</td>
+                        <td>24.85</td>
+                        <td>18.91</td>
+                    </tr>
+                    <tr>
+                        <td>Temporal Next (TN)</td>
+                        <td class="highlight-max">27.72</td>
+                        <td class="highlight-max">16.69</td>
+                        <td class="highlight-max">17.45</td>
+                        <td class="highlight-max">18.53</td>
+                        <td class="highlight-max">27.79</td>
+                        <td class="highlight-max">22.05</td>
+                        <td class="highlight-max">27.54</td>
+                        <td class="highlight-max">22.54</td>
+                    </tr>
+                    <tr>
+                        <td>Temporal Previous (TP)</td>
+                        <td>24.22</td>
+                        <td>10.94</td>
+                        <td>14.84</td>
+                        <td>14.84</td>
+                        <td>21.09</td>
+                        <td>15.62</td>
+                        <td>23.44</td>
+                        <td>17.86</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td><b>Complex Questions Avg</b></td>
+                        <td><b>21.93</b></td>
+                        <td><b>12.45</b></td>
+                        <td><b>13.99</b></td>
+                        <td><b>13.26</b></td>
+                        <td><b>20.80</b></td>
+                        <td><b>15.26</b></td>
+                        <td><b>20.85</b></td>
+                        <td><b>16.94</b></td>
+                    </tr>
+                </tfoot>
+            </table>
+            
+             <h3>Key Findings</h3>
+            <ul>
+                <li><b>Model Size and Sycophancy Resistance:</b> Larger models, such as Qwen2.5-VL (32B and 72B) and InternVL 2.5 (26B), demonstrated greater resistance to sycophantic behavior compared to smaller models like Qwen2.5-VL (7B), which had the highest susceptibility (MSS 44.92). This suggests that increased model scale enhances robustness against misleading user prompts, contrasting with some findings in static image-based MLLMs where smaller models were more conservative.
+                <li><b>Impact of Prompt Tone on Sycophancy:</b> Stronger user bias in prompts, particularly in "Strong Bias Feedback" scenarios, generally led to higher sycophantic responses (average MSS 30.84). However, subtle "Suggestive Bias" prompts sometimes triggered higher sycophancy than medium or strong biases in certain models (e.g., GPT-4o mini, MSS 9.53 for Suggestive vs. 8.72 for Strong), indicating that nuanced phrasing can significantly influence model behavior.
+                <li><b>Question Type Sensitivity:</b> Temporal and causal reasoning questions, such as "Causal Why" (CW) and "Temporal Next" (TN), were more susceptible to sycophancy, with higher misleading instance counts (e.g., 799 for CW in Strong Bias). Descriptive questions, like "Descriptive Counting" (DC) and "Descriptive Location" (DL), showed fewer misleading instances, suggesting that complex reasoning tasks amplify sycophantic tendencies due to their reliance on integrating linguistic and visual cues.
+            </ul>
+        </div>
+    </div>
+<footer style="text-align: center; padding: 1rem 0; margin-top: 2rem; color: #666; font-size: 0.9rem;">
+        <p>&copy; 2025 All Rights Reserved. This website was constructed by Wenrui Zhou.</p>
+    </footer>
+    
+</body>
+</html>
